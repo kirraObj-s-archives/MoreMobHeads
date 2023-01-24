@@ -14,7 +14,8 @@ import java.util.logging.Level;
 
 import jdk.internal.joptsimple.internal.Strings;
 
-import org.apache.commons.lang.Validate;
+
+import org.apache.commons.lang3.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;

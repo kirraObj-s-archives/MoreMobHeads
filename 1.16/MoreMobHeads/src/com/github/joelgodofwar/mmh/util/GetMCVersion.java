@@ -1,6 +1,6 @@
 package com.github.joelgodofwar.mmh.util;
 
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.bukkit.Bukkit;
 
 public class GetMCVersion {
