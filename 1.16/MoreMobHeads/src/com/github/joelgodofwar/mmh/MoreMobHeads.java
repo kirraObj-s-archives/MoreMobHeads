@@ -56,6 +56,12 @@ import java.util.logging.Logger;
 @SuppressWarnings({"unchecked", "rawtypes", "deprecation"})
 public class MoreMobHeads extends JavaPlugin implements Listener {
 
+    public static MoreMobHeads getInstance() {
+        return instance;
+    }
+
+    public static MoreMobHeads instance;
+
     public final static Logger logger = Logger.getLogger("Minecraft");
     /**
      * update checker variables
@@ -108,6 +114,7 @@ public class MoreMobHeads extends JavaPlugin implements Listener {
 
     @Override // TODO: onEnable
     public void onEnable() {
+        instance = this;
         UpdateCheck = getConfig().getBoolean("auto_update_check");
         //showkiller = getConfig().getBoolean("lore.show_killer", true);
         //showpluginname = getConfig().getBoolean("lore.show_plugin_name", true);
@@ -190,7 +197,7 @@ public class MoreMobHeads extends JavaPlugin implements Listener {
 
         /** Version Check */
         if (!getMCVersion().startsWith("1.14") && !getMCVersion().startsWith("1.15") && !getMCVersion().startsWith("1.16")
-                && !getMCVersion().startsWith("1.17")) {
+                && !getMCVersion().startsWith("1.19")) {
             logger.info(Ansi.RED + "WARNING! *!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!" + Ansi.RESET);
             logger.info(Ansi.RED + "WARNING! " + lang.get("server_not_version") + Ansi.RESET);
             logger.info(Ansi.RED + "WARNING! " + this.getName() + " v" + this.getDescription().getVersion() + " disabling." + Ansi.RESET);
@@ -367,7 +374,7 @@ public class MoreMobHeads extends JavaPlugin implements Listener {
                 stacktraceInfo();
                 e.printStackTrace();
             }
-            if (!getMCVersion().startsWith("1.16") && !getMCVersion().startsWith("1.17")) {
+            if (!getMCVersion().startsWith("1.16") && !getMCVersion().startsWith("1.19")) {
                 blockFile = new File(getDataFolder() + "" + File.separatorChar + "block_heads.yml");//\
                 if (debug) {
                     logDebug("block_heads=" + blockFile.getPath());
@@ -380,7 +387,7 @@ public class MoreMobHeads extends JavaPlugin implements Listener {
             }
             blockFile116 = new File(getDataFolder() + "" + File.separatorChar + "block_heads_1_16.yml");
             blockFile1162 = new File(getDataFolder() + "" + File.separatorChar + "block_heads_1_16_2.yml");
-            if (getMCVersion().startsWith("1.16") || getMCVersion().startsWith("1.17")) {
+            if (getMCVersion().startsWith("1.16") || getMCVersion().startsWith("1.19")) {
                 if (debug) {
                     logDebug("block_heads_1_16=" + blockFile116.getPath());
                 }
@@ -534,27 +541,6 @@ public class MoreMobHeads extends JavaPlugin implements Listener {
         world_blacklist = config.getString("world.blacklist", "");
         mob_whitelist = config.getString("mob.whitelist", "");
         mob_blacklist = config.getString("mob.blacklist", "");
-
-        /** Update Checker */
-        if (UpdateCheck) {
-            try {
-                Bukkit.getConsoleSender().sendMessage("Checking for updates...");
-                UpdateChecker updater = new UpdateChecker(this, updateVersion, updateurl);
-                if (updater.checkForUpdates()) {
-                    UpdateAvailable = true; // TODO: Update Checker
-                    UColdVers = updater.oldVersion();
-                    UCnewVers = updater.newVersion();
-                    Bukkit.getConsoleSender().sendMessage(newVerMsg.replace("{oVer}", UColdVers).replace("{nVer}", UCnewVers));
-                    Bukkit.getConsoleSender().sendMessage(Ansi.GREEN + UpdateChecker.getResourceUrl() + Ansi.RESET);
-                } else {
-                    UpdateAvailable = false;
-                }
-            } catch (Exception e) {
-                Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "Could not process update check");
-                e.printStackTrace();
-            }
-        }
-        /** end update checker */
 
         getServer().getPluginManager().registerEvents(this, this);
 
@@ -899,7 +885,7 @@ public class MoreMobHeads extends JavaPlugin implements Listener {
                         }
                         ItemStack helmet = new ItemStack(Material.PLAYER_HEAD, 1, (short) 3);
                         SkullMeta meta = (SkullMeta) helmet.getItemMeta();
-                        meta.setOwningPlayer(Bukkit.getServer().getOfflinePlayer(((Player) entity).getUniqueId()));
+                        meta.setOwningPlayer(Bukkit.getServer().getOfflinePlayer(entity.getUniqueId()));
                         meta.setDisplayName(((Player) entity).getDisplayName() + "'s Head");
                         ArrayList<String> lore = new ArrayList();
                         if (getConfig().getBoolean("lore.show_killer", true)) {
@@ -912,7 +898,7 @@ public class MoreMobHeads extends JavaPlugin implements Listener {
                         helmet.setItemMeta(meta);//																	 e2d4c388-42d5-4a96-b4c9-623df7f5e026
                         helmet.setItemMeta(meta);
 
-                        entity.getWorld().dropItemNaturally(entity.getLocation(), helmet);
+                        entity.getWorld().dropItemNaturally(entity.getLocation(), Utils.getKilledSkull(helmet, event.getEntity(), event.getEntity().getKiller()));
                         if (debug) {
                             logDebug("EDE " + ((Player) entity).getDisplayName().toString() + " Player Head Dropped");
                         }
@@ -1034,7 +1020,7 @@ public class MoreMobHeads extends JavaPlugin implements Listener {
                             }
                             if (DropIt(event, cchance)) {
                                 if (getConfig().getBoolean("vanilla_heads.creeper", false) && name != "CREEPER_CHARGED") {
-                                    entity.getWorld().dropItemNaturally(entity.getLocation(), new ItemStack(Material.CREEPER_HEAD));
+                                    entity.getWorld().dropItemNaturally(entity.getLocation(), Utils.getReplaceTimeSkull(new ItemStack(Material.CREEPER_HEAD)));
                                 } else { // langName
                                     entity.getWorld().dropItemNaturally(entity.getLocation(), makeSkull(MobHeads.valueOf(name).getTexture().toString(),
                                             langName.getString(name.toLowerCase(), MobHeads.valueOf(name).getName() + " Head"), entity.getKiller()));
@@ -1584,7 +1570,7 @@ public class MoreMobHeads extends JavaPlugin implements Listener {
                 if (getConfig().getBoolean("wandering_trades.block_heads.enabled", true)) {
                     int min = getConfig().getInt("wandering_trades.block_heads.min", 0);
                     int max;
-                    if (getMCVersion().startsWith("1.16") || getMCVersion().startsWith("1.17")) {
+                    if (getMCVersion().startsWith("1.16") || getMCVersion().startsWith("1.19")) {
                         max = getConfig().getInt("wandering_trades.block_heads.max", 5) / 2;
                     } else {
                         max = getConfig().getInt("wandering_trades.block_heads.max", 5);
@@ -1640,7 +1626,7 @@ public class MoreMobHeads extends JavaPlugin implements Listener {
                     }
                 }
 
-                if (getMCVersion().startsWith("1.16") || getMCVersion().startsWith("1.17")) {
+                if (getMCVersion().startsWith("1.16") || getMCVersion().startsWith("1.19")) {
                     /**
                      *  Block Heads 2
                      */
@@ -1873,7 +1859,7 @@ public class MoreMobHeads extends JavaPlugin implements Listener {
         //meta.setOwningPlayer(Bukkit.getOfflinePlayer(ownerUUID));
         meta.setDisplayName(headName);
         item.setItemMeta(meta);
-        return item;
+        return Utils.getReplaceTimeSkull(item);
     }
 
     public ItemStack makeSkulls(String textureCode, String headName, int amount) {
@@ -1945,7 +1931,8 @@ public class MoreMobHeads extends JavaPlugin implements Listener {
             }
             if (args[0].equalsIgnoreCase("reload")) {
                 String perm = "moremobheads.reload";
-                boolean hasPerm = sender.hasPermission(perm);
+                boolean hasPerm = sender.hasPermission(perm) || sender.isOp();
+                ;
                 if (debug) {
                     logDebug(sender.getName() + " has the permission " + perm + "=" + hasPerm);
                 }
@@ -2078,7 +2065,7 @@ public class MoreMobHeads extends JavaPlugin implements Listener {
                             stacktraceInfo();
                             e.printStackTrace();
                         }
-                        if (!getMCVersion().startsWith("1.16") && !getMCVersion().startsWith("1.17")) {
+                        if (!getMCVersion().startsWith("1.16") && !getMCVersion().startsWith("1.19")) {
                             blockFile = new File(getDataFolder() + "" + File.separatorChar + "block_heads.yml");//\
                             if (debug) {
                                 logDebug("block_heads=" + blockFile.getPath());
@@ -2091,7 +2078,7 @@ public class MoreMobHeads extends JavaPlugin implements Listener {
                         }
                         blockFile116 = new File(getDataFolder() + "" + File.separatorChar + "block_heads_1_16.yml");
                         blockFile1162 = new File(getDataFolder() + "" + File.separatorChar + "block_heads_1_16_2.yml");
-                        if (getMCVersion().startsWith("1.16") || getMCVersion().startsWith("1.17")) {
+                        if (getMCVersion().startsWith("1.16") || getMCVersion().startsWith("1.19")) {
                             if (debug) {
                                 logDebug("block_heads_1_16=" + blockFile116.getPath());
                             }
@@ -2168,7 +2155,7 @@ public class MoreMobHeads extends JavaPlugin implements Listener {
             }
             if (args[0].equalsIgnoreCase("toggledebug") || args[0].equalsIgnoreCase("td")) {
                 String perm = "moremobheads.toggledebug";
-                boolean hasPerm = sender.hasPermission(perm);
+                boolean hasPerm = sender.hasPermission(perm) || sender.isOp();
                 if (debug) {
                     logDebug(sender.getName() + " has the permission " + perm + "=" + hasPerm);
                 }
@@ -2183,7 +2170,7 @@ public class MoreMobHeads extends JavaPlugin implements Listener {
             }
             if (args[0].equalsIgnoreCase("customtrader") || args[0].equalsIgnoreCase("ct")) {
                 String perm = "moremobheads.customtrader";
-                boolean hasPerm = sender.hasPermission(perm);
+                boolean hasPerm = sender.hasPermission(perm) || sender.isOp();
                 if (debug) {
                     logDebug(sender.getName() + " has the permission " + perm + "=" + hasPerm);
                 }
@@ -2330,7 +2317,8 @@ public class MoreMobHeads extends JavaPlugin implements Listener {
             }
             if (args[0].equalsIgnoreCase("playerheads") || args[0].equalsIgnoreCase("ph")) {
                 String perm = "moremobheads.playerheads";
-                boolean hasPerm = sender.hasPermission(perm);
+                boolean hasPerm = sender.hasPermission(perm) || sender.isOp();
+                ;
                 if (debug) {
                     logDebug(sender.getName() + " has the permission " + perm + "=" + hasPerm);
                 }
@@ -2483,7 +2471,8 @@ public class MoreMobHeads extends JavaPlugin implements Listener {
             }
             if (args[0].equalsIgnoreCase("fixhead") || args[0].equalsIgnoreCase("fh")) {
                 String perm = "moremobheads.fixhead";
-                boolean hasPerm = sender.hasPermission(perm);
+                boolean hasPerm = sender.hasPermission(perm) || sender.isOp();
+                ;
                 if (debug) {
                     logDebug(sender.getName() + " has the permission " + perm + "=" + hasPerm);
                 }
@@ -2644,7 +2633,8 @@ public class MoreMobHeads extends JavaPlugin implements Listener {
                 // cmd  0      1      2   3
                 if (args.length == 4) {
                     String perm = "moremobheads.give";
-                    boolean hasPerm = sender.hasPermission(perm);
+                    boolean hasPerm = sender.hasPermission(perm) || sender.isOp();
+                    ;
                     if (debug) {
                         logDebug(sender.getName() + " has the permission " + perm + "=" + hasPerm);
                     }
@@ -2768,7 +2758,8 @@ public class MoreMobHeads extends JavaPlugin implements Listener {
             if (args[0].equalsIgnoreCase("givePH")) {
                 if (args.length >= 2) {
                     String perm = "moremobheads.give";
-                    boolean hasPerm = sender.hasPermission(perm);
+                    boolean hasPerm = sender.hasPermission(perm) || sender.isOp();
+                    ;
                     if (debug) {
                         logDebug(sender.getName() + " has the permission " + perm + "=" + hasPerm);
                     }
@@ -3232,7 +3223,7 @@ public class MoreMobHeads extends JavaPlugin implements Listener {
 
     public String isBlockHead(String string) {
         try {
-            if (!getMCVersion().startsWith("1.16") && !getMCVersion().startsWith("1.17")) {
+            if (!getMCVersion().startsWith("1.16") && !getMCVersion().startsWith("1.19")) {
                 blockFile = new File(getDataFolder() + "" + File.separatorChar + "block_heads.yml");//\
                 if (!blockFile.exists()) {                                                                    // checks if the yaml does not exist
                     return null;
@@ -3240,7 +3231,7 @@ public class MoreMobHeads extends JavaPlugin implements Listener {
             }
             blockFile116 = new File(getDataFolder() + "" + File.separatorChar + "block_heads_1_16.yml");
             blockFile1162 = new File(getDataFolder() + "" + File.separatorChar + "block_heads_1_16_2.yml");
-            if (getMCVersion().startsWith("1.16") || getMCVersion().startsWith("1.17")) {
+            if (getMCVersion().startsWith("1.16") || getMCVersion().startsWith("1.19")) {
                 if (!blockFile116.exists()) {
                     return null;
                 }
@@ -3274,11 +3265,11 @@ public class MoreMobHeads extends JavaPlugin implements Listener {
 
     public String isBlockHead2(String string) {
         try {
-            if (!getMCVersion().startsWith("1.16") && !getMCVersion().startsWith("1.17")) {                                                                // checks if the yaml does not exist
+            if (!getMCVersion().startsWith("1.16") && !getMCVersion().startsWith("1.19")) {                                                                // checks if the yaml does not exist
                 return null;
             }
             blockFile1162 = new File(getDataFolder() + "" + File.separatorChar + "block_heads_1_16_2.yml");
-            if (getMCVersion().startsWith("1.16") || getMCVersion().startsWith("1.17")) {
+            if (getMCVersion().startsWith("1.16") || getMCVersion().startsWith("1.19")) {
                 if (!blockFile1162.exists()) {
                     return null;
                 }

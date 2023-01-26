@@ -86,3 +86,13 @@ blacklist:
   enforce: false
   # seperate player names with commas "JoeHillsSays, TinFoilChef, etc."
   player_head_blacklist: names_go_here
+
+player_skull:
+  name: "&6{entity_name} &7的头颅"
+  lore:
+    - "&e由 {player_name} &e斩获于"
+    - "&e%server_time_YYYY% 年 %server_time_MM% 月 %server_time_dd% 日 %server_time_HH:mm:ss%"
+
+time:
+  enable: true
+  value: "yyyy 年 MM 月 dd 日 HH:mm:ss"
