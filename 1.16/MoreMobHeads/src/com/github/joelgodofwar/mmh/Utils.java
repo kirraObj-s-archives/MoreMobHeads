@@ -2,6 +2,7 @@ package com.github.joelgodofwar.mmh;
 
 import me.clip.placeholderapi.PlaceholderAPI;
 import org.apache.commons.lang3.time.DateFormatUtils;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -24,6 +25,7 @@ public class Utils {
         return item;
     }
 
+    @NotNull
     public static ItemStack getReplaceTimeSkull(ItemStack originItem) {
         if (!MoreMobHeads.getInstance().getConfig().getBoolean("time.enable")) {
             return originItem;
